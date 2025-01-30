@@ -7,6 +7,9 @@ from schemas import UploadResponse
 
 app = FastAPI()
 
+PROCESSING_SERVICE_URL = "http://microservicio_processing:8001/process_batch/"
+BATCH_SIZE = 100
+
 @app.on_event("startup")
 def startup_event():
     init_db() 
@@ -24,6 +27,10 @@ def get_db():
 
 @app.post("/upload/", response_model=UploadResponse)
 async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Endpoint para cargar un archivo CSV con coordenadas, almacenarlas en la BD,
+    y luego enviarlas en lotes de 100 al microservicio Processing.
+    """
     df = pd.read_csv(file.file)
 
     column_map = {"lat": "latitude", "lon": "longitude"}
