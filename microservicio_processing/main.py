@@ -15,7 +15,14 @@ def get_db():
 
 @app.post("/update_postcodes/")
 def update_postcodes(db: Session = Depends(get_db)):
+    """
+    Recorre la base de datos en busca de coordenadas sin código postal
+    y las procesa una por una llamando a la API externa.
+    """
     entries = db.query(PostcodeEntry).filter(PostcodeEntry.postcode == None).all()
+    
+    if not entries:
+        return {"message": "No hay registros pendientes de actualización."}
     
     for entry in entries:
         postcode = fetch_postcode(entry.latitude, entry.longitude)
