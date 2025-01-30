@@ -37,13 +37,13 @@ async def upload_csv(file: UploadFile, db: Session):
 
     try:
         entries = [
-            PostcodeEntry(latitude=row["latitude"], longitude=row["longitude"])
-            for _, row in df.iterrows()
+            PostcodeEntry(latitude=float(row.latitude), longitude=float(row.longitude))
+            for row in df.itertuples(index=False)
         ]
         db.bulk_save_objects(entries)
         db.commit()
 
-        coordinates_list = df[["latitude", "longitude"]].to_dict(orient="records")
+        coordinates_list = df[["latitude", "longitude"]].astype(float).to_dict(orient="records")
         total_records = len(coordinates_list)
         batch_responses = []
 
