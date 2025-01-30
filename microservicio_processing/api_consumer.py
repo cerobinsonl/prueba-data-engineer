@@ -46,15 +46,30 @@ def fetch_postcodes_batch(coordinates):
         response = requests.post(API_URL, json=payload, timeout=5)
         response.raise_for_status()
         data = response.json()
+        print(f"debug de API batch: {data}")
 
-        if "result" not in data:
+        if "result" not in data or not isinstance(data["result"], list):
             print(f"Respuesta de la API sin 'result': {data}")
             return {}
 
-        result_dict = {
-            (coord["query"]["latitude"], coord["query"]["longitude"]): coord["result"].get("postcode")
-            for coord in data["result"] if coord.get("result") and coord["result"].get("postcode")}
-        
+        result_dict = {}
+
+        for item in data["result"]:
+            if not isinstance(item, dict) or "query" not in item or "result" not in item:
+                print(f"Elemento inesperado en la respuesta batch: {item}")
+                continue
+            
+            query = item["query"]
+            if "latitude" not in query or "longitude" not in query:
+                print(f"Faltan coordenadas en `query`: {query}")
+                continue  # Saltamos si falta lat/lon
+
+            lat, lon = query["latitude"], query["longitude"]
+
+            result = item["result"]
+            if result and "postcode" in result:
+                result_dict[(lat, lon)] = result["postcode"]
+
         print(f"Postcodes procesados en batch: {result_dict}")
         return result_dict
     
