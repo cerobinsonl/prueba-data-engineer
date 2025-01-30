@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postcodes
+    ports:
+      - "5432:5432"
+
+  microservicio_uploader:
+    build:
+      context: .
+      dockerfile: microservicio_uploader/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://user:password@db/postcodes
+
+  microservicio_processing:
+    build:
+      context: .
+      dockerfile: microservicio_processing/Dockerfile
+    ports:
+      - "8001:8001"
+    depends_on:
+      - microservicio_uploader
+    environment:
+      DATABASE_URL: postgresql://user:password@db/postcodes
