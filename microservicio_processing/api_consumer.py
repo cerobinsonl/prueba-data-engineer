@@ -62,13 +62,17 @@ def fetch_postcodes_batch(coordinates):
             query = item["query"]
             if "latitude" not in query or "longitude" not in query:
                 print(f"Faltan coordenadas en `query`: {query}")
-                continue  # Saltamos si falta lat/lon
+                continue
 
             lat, lon = query["latitude"], query["longitude"]
 
             result = item["result"]
-            if result and "postcode" in result:
+            if isinstance(result, list) and len(result) > 0 and "postcode" in result[0]:
+                result_dict[(lat, lon)] = result[0]["postcode"]
+            elif isinstance(result, dict) and "postcode" in result:
                 result_dict[(lat, lon)] = result["postcode"]
+            else:
+                print(f"No se encontró postcode para {lat}, {lon}")
 
         print(f"Postcodes procesados en batch: {result_dict}")
         return result_dict
