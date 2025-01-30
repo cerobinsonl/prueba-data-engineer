@@ -49,7 +49,21 @@ async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
         ]
         db.bulk_save_objects(entries)
         db.commit()
-        return {"message": "Archivo procesado correctamente", "rows_processed": len(entries)}
+
+        coordinates_list = df[["latitude", "longitude"]].to_dict(orient="records")
+        total_records = len(coordinates_list)
+        batch_responses = []
+
+        for i in range(0, total_records, BATCH_SIZE):
+            batch = coordinates_list[i : i + BATCH_SIZE]
+            response = requests.post(PROCESSING_SERVICE_URL, json={"coordinates": batch})
+
+            if response.status_code == 200:
+                batch_responses.append(response.json())
+            else:
+                batch_responses.append({"error": f"Fallo en batch {i // BATCH_SIZE}: {response.text}"})
+
+        return {"message": "Archivo procesado correctamente", "rows_processed": len(entries), "processing_response": batch_responses}
     
     except Exception as e:
         db.rollback()
